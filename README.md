@@ -31,17 +31,22 @@ may be less Pythonic, I find it much easier to read and remember than the typica
 
 ```python
 import numpy as np
+from pathlib import Path
+import pkg_resources
 from pyraster.Raster import Raster, RasterStack
 
+# Find path to data within the package
+pth = Path(pkg_resources.resource_filename('pyraster', 'data'))
+
 # Read in rasters
-r1 = Raster('./data/19990601_pr.tif')
-r2 = Raster('./data/template.tif')
+r1 = Raster(pth / '19990601_pr.tif')
+r1 = Raster(pth / 'template.tif')
 
 # Reproject with one line of code
 reproj = r1.reproject(r2, method='bilinear')
 
 # Do some stuff to the new raster
-reproj = reproj * r2 # Possible because the two rasters now share the same projection.
+reproj = reproj * r2 # Possible because the two rasters now share the same projection and resolution.
 reproj /= 18
 
 # Make a RasterStack 
