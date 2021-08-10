@@ -8,18 +8,18 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 # data_files = [str(x) for x in pathlib.Path(here / 'data').glob('*.tif')]
 
 setup(
-    name='PyRaster', 
-    version='1.0.0',
-    description='Wrapper around Rasterio functions for simple raster processing in Python',
+    name='RRaster', 
+    version='0.0.1',
+    description='Rasterio function wrappers for simple raster processing in Python that mimics the R Raster syntax.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/colinbrust/PyRaster',
+    url='https://github.com/colinbrust/RRaster',
     author='Colin Brust',
     author_email='colin.brust@gmail.com',
-    keywords='raster, rasterio, simplified',
-    packages=['pyraster'],
-    package_dir={'pyraster': 'src/pyraster'},
-    package_data={'pyraster': ['data/*.tif']},
+    keywords='raster, rasterio, R, simplified',
+    packages=['rraster'],
+    package_dir={'rraster': 'src/rraster'},
+    package_data={'rraster': ['data/*.tif']},
     python_requires='>=3.6, <4',
     install_requires=['rasterio', 'numpy', 'matplotlib'],  # Optional
     # extras_require={  # Optional

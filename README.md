@@ -1,4 +1,4 @@
-# PyRaster
+# RRaster
 ### Simple and readable raster manipulation with Python.
 
 This package is an attempt to create a set of user-friendly functions for reprojecting and manipulating rasters with 
@@ -24,7 +24,7 @@ $ pip install .
 
 Examples
 --------
-The current operations supported by PyRaster are reprojection, reduction, writing to disk, and basic raster calculations
+The current operations supported by RRaster are reprojection, reduction, writing to disk, and basic raster calculations
 (addition, subtraction, etc.). Below, a [gridMet](http://www.climatologylab.org/gridmet.html) precipitation raster is 
 projected to the [EASE-2 grid](https://nsidc.org/data/ease) and some basic manipulations are done. Although this syntax
 may be less Pythonic, I find it much easier to read and remember than the typical rasterio syntax.
@@ -33,10 +33,10 @@ may be less Pythonic, I find it much easier to read and remember than the typica
 import numpy as np
 from pathlib import Path
 import pkg_resources
-from pyraster.Raster import Raster, RasterStack
+from rraster.Raster import Raster, RasterStack
 
 # Find path to data within the package
-pth = Path(pkg_resources.resource_filename('pyraster', 'data'))
+pth = Path(pkg_resources.resource_filename('rraster', 'data'))
 
 # Read in rasters
 r1 = Raster(pth / '19990601_pr.tif')

@@ -1,5 +1,5 @@
 import numpy as np
-from pyraster.Raster import Raster, RasterStack
+from rraster.Raster import Raster, RasterStack
 
 
 class TestRaster:
