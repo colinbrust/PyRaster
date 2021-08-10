@@ -1,5 +1,10 @@
 import numpy as np
+from pathlib import Path
+import pkg_resources
 from rraster.Raster import Raster, RasterStack
+
+# Find path to data within the package
+pth = Path(pkg_resources.resource_filename('rraster', 'data'))
 
 
 class TestRaster:
@@ -23,8 +28,8 @@ class TestRaster:
         assert (tmp.arr == np.array([[7, 16, 27], [40, 55, 72]])).all()
 
     def test_reproject(self):
-        r1 = Raster('../data/19990601_pr.tif')
-        r2 = Raster('../data/template.tif')
+        r1 = Raster(pth / '19990601_pr.tif')
+        r2 = Raster(pth / 'template.tif')
         tmp = r1.reproject(r2)
 
         assert r2.arr.shape == tmp.arr.shape, 'Shapes are not the same.'
