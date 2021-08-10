@@ -18,6 +18,11 @@ It is recommended to use this package within a `virtualenv`.
 ```sh
 $ python3 -m venv venv
 $ source venv/bin/activate
+
+# The RRaster package can be installed with pip
+$ pip install rraster
+
+# Alternatively, the development version of the package can be installed from 
 $ pip install -r requirements.txt
 $ pip install .
 ````
