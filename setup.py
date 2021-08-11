@@ -21,7 +21,7 @@ setup(
     package_dir={'rraster': 'src/rraster'},
     package_data={'rraster': ['data/*.tif']},
     python_requires='>=3.6, <4',
-    install_requires=['rasterio', 'numpy', 'matplotlib'],  # Optional
+    install_requires=['rasterio', 'numpy', 'matplotlib', 'geopandas'],  # Optional
     # extras_require={  # Optional
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
