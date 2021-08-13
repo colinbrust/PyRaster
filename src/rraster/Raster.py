@@ -35,12 +35,15 @@ class Raster(object):
                 self.profile = tmp.profile
                 self.arr = self.arr.astype(np.float32)
                 self.arr[self.arr == self.nodata] = np.nan
+            
+            self.name = rst.stem
 
         # Instantiate from np array.
         elif isinstance(rst, np.ndarray):
 
             assert all([x in kwargs for x in ['nodata', 'transform']]), "'nodata' and 'transform' must both be kwargs" \
                                                                         "when creating a raster from an array."
+            assert 'name' in kwargs, "You must include a 'name' argument when creating a raster from a numpy array."
             self.arr = rst
             self.nodata = kwargs['nodata']
             self.transform = kwargs['transform']
@@ -201,7 +204,7 @@ class RasterStack(object):
         profile: All other raster metadata.
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, build_arr=True):
         assert all([isinstance(x, (str, Path, Raster)) for x in args]), 'Error! All rasters must be the same format.'
         if not isinstance(args[0], Raster):
             args = [Raster(x) for x in args]
@@ -210,6 +213,13 @@ class RasterStack(object):
         self.nodata = self.rasters[0].nodata
         self.transform = self.rasters[0].transform
         self.profile = self.rasters[0].profile
+        self.names = [x.name for x in self.rasters]
+        
+        # In the case of a stack with hundreds or thousands of images, this could take a while.
+        if build_arr:
+            self.arr = np.array([x.arr for x in self.rasters])
+        else:
+            self.arr = None
 
     def reduce(self, fun, axis=0):
         """
@@ -219,3 +229,9 @@ class RasterStack(object):
         arr = np.array([x.arr for x in self.rasters])
         tmp = fun(arr, axis=axis)
         return Raster(tmp, **self.profile)
+    
+    def __len__(self):
+        return len(self.rasters)
+
+    def __getitem__(self, idx):
+        return self.rasters[idx]
