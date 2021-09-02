@@ -43,7 +43,7 @@ class Raster(object):
 
             assert all([x in kwargs for x in ['nodata', 'transform']]), "'nodata' and 'transform' must both be kwargs" \
                                                                         "when creating a raster from an array."
-            assert 'name' in kwargs, "You must include a 'name' argument when creating a raster from a numpy array."
+            self.name = 'raster_layer' if 'name' not in kwargs else kwargs['name']
             self.arr = rst
             self.nodata = kwargs['nodata']
             self.transform = kwargs['transform']
@@ -221,14 +221,14 @@ class RasterStack(object):
         else:
             self.arr = None
 
-    def reduce(self, fun, axis=0):
+    def reduce(self, fun, axis=0, name='reduced_raster'):
         """
         :param fun: A numpy function to apply to the stack of rasters (e.g. np.mean)
         :param axis: The axis to apply the function across. In most cases should be zero.
         """
         arr = np.array([x.arr for x in self.rasters])
         tmp = fun(arr, axis=axis)
-        return Raster(tmp, **self.profile)
+        return Raster(tmp, name=name, **self.profile)
     
     def __len__(self):
         return len(self.rasters)
