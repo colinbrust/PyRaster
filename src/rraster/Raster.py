@@ -35,6 +35,7 @@ class Raster(object):
                 self.profile = tmp.profile
                 self.arr = self.arr.astype(np.float32)
                 self.arr[self.arr == self.nodata] = np.nan
+                self.bounds = tmp.bounds
             
             self.name = rst.stem
 

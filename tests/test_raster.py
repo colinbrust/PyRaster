@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 import pkg_resources
-from src.rraster.Raster import Raster, RasterStack
-from src.rraster.Rasterize import rasterize
+from rraster.Raster import Raster, RasterStack
+from rraster.Rasterize import rasterize
 
 
 # Find path to data within the package
