@@ -48,6 +48,7 @@ class Raster(object):
             self.arr = rst
             self.nodata = kwargs['nodata']
             self.transform = kwargs['transform']
+            self.bounds = kwargs['bounds'] if 'bound' in kwargs else None
             self.profile = {'crs': kwargs['crs'] if 'crs' in kwargs else None,
                             'height': kwargs['height'] if 'height' in kwargs else self.arr.shape[0],
                             'width': kwargs['width'] if 'width' in kwargs else self.arr.shape[1],
@@ -150,6 +151,9 @@ class Raster(object):
         profile['height'] = other.profile['height']
         profile['transform'] = transform
         profile['crs'] = other.profile['crs']
+        profile['bounds'] = other.bounds
+        profile['profile'] = other.profile
+
 
         return Raster(rst=arr, **profile)
 
