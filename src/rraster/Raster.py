@@ -1,10 +1,14 @@
 from __future__ import annotations
-import numpy as np
-import matplotlib.pyplot as plt
+
+import tempfile
 from pathlib import Path
-import rasterio as rio
-from rasterio.warp import reproject, Resampling
 from typing import List, Union
+
+import matplotlib.pyplot as plt
+import numpy as np
+import rasterio as rio
+import xarray
+from rasterio.warp import Resampling, reproject
 
 
 class Raster(object):
@@ -28,14 +32,21 @@ class Raster(object):
             if not rst.exists():
                 raise FileNotFoundError(f'Error! The provided raster ({rst}) does not exist.')
 
+
             with rio.open(rst) as tmp:
                 self.arr = tmp.read(band)
-                self.nodata = tmp.nodata
-                self.transform = tmp.transform
-                self.profile = tmp.profile
+                self.arr = self.arr * tmp.scales if tmp.scales else self.arr
                 self.arr = self.arr.astype(np.float32)
-                self.arr[self.arr == self.nodata] = np.nan
+                self.nodata = tmp.nodata
+                self.arr[self.arr == tmp.nodata] = np.nan
                 self.bounds = tmp.bounds
+                self.count = tmp.count
+                self.crs = tmp.crs
+                self.driver = tmp.driver or 'GTiff'
+                self.dtype = tmp.profile['dtype']
+                self.height = tmp.height
+                self.transform = tmp.transform
+                self.width = tmp.width
             
             self.name = rst.stem
 
@@ -44,17 +55,19 @@ class Raster(object):
 
             assert all([x in kwargs for x in ['nodata', 'transform']]), "'nodata' and 'transform' must both be kwargs" \
                                                                         "when creating a raster from an array."
-            self.name = 'raster_layer' if 'name' not in kwargs else kwargs['name']
+
             self.arr = rst
-            self.nodata = kwargs['nodata']
-            self.transform = kwargs['transform']
-            self.bounds = kwargs['bounds'] if 'bound' in kwargs else None
-            self.profile = {'crs': kwargs['crs'] if 'crs' in kwargs else None,
-                            'height': kwargs['height'] if 'height' in kwargs else self.arr.shape[0],
-                            'width': kwargs['width'] if 'width' in kwargs else self.arr.shape[1],
-                            'count': kwargs['count'] if 'count' in kwargs else 1,  # TODO: Use better logic here.
-                            'dtype': kwargs['dtype'] if 'dtype' in kwargs else 'float32'}
-            self.profile.update(kwargs)
+            self.arr = self.arr.astype(np.float32)
+            self.count = 1 if np.ndim(self.arr) == 2 else self.arr.shape[0]
+            self.crs = None if 'crs' not in kwargs else kwargs['crs']
+            self.driver = 'GTiff' if 'driver' not in kwargs else kwargs['driver']
+            self.dtype = 'float32' if 'dtype' not in kwargs else kwargs['dtype']
+            self.height = self.arr.shape[-2]
+            self.name = 'raster_layer' if 'name' not in kwargs else kwargs['name']
+            self.nodata = -9999 if 'nodata' not in kwargs else kwargs['nodata']
+            self.transform = None if 'transform' not in kwargs else kwargs['transform']
+            self.width = self.arr.shape[-1]
+
         else:
             raise TypeError('Error! "rst" must be a np.array, str or Path object')
 
@@ -65,6 +78,11 @@ class Raster(object):
             'int8': np.int8,
             'int16': np.int16
         }
+
+        self.inv_dt_map = {self.dt_map[k] : k for k in self.dt_map}
+    
+    def crop(self, other: Union[List[float], Raster]):
+        raise NotImplementedError('The crop method is not implemented yet.')
 
     def plot(self):
         """
@@ -79,7 +97,7 @@ class Raster(object):
         plt.colorbar()
         plt.show()
 
-    def write(self, save_name: Union[str, Path], **kwargs):
+    def write(self, save_name: Union[str, Path]):
         """
         Write raster to disk.
         :param save_name: Desired path and filename of
@@ -87,34 +105,30 @@ class Raster(object):
         :return: None, saves raster to disk.
         """
 
-        count = kwargs.pop('count') if 'count' in kwargs else self.profile['count']
-        nodata = kwargs.pop('nodata') if 'nodata' in kwargs else self.nodata
-
         out_dst = rio.open(
             save_name,
             'w',
             driver='GTiff',
-            height=kwargs.pop('height') if 'height' in kwargs else self.profile['height'],
-            width=kwargs.pop('width') if 'width' in kwargs else self.profile['width'],
-            count=count,
-            dtype=kwargs.pop('dtype') if 'dtype' in kwargs else self.profile['dtype'],
-            nodata=nodata,
-            transform=kwargs.pop('transform') if 'transform' in kwargs else self.transform,
-            crs=kwargs.pop('crs') if 'crs' in kwargs else self.profile['crs'],
-            **kwargs
+            height=self.height,
+            width=self.width,
+            count=self.count,
+            dtype=self.dtype,
+            nodata=self.nodata,
+            transform=self.transform,
+            crs=self.crs,
         )
 
-        dt = self.dt_map[kwargs['dtype']] if 'dtype' in kwargs else np.float32
+        dt = self.dt_map[self.dtype] 
 
-        arr = np.nan_to_num(self.arr, nan=nodata)
-        if count == 1:
+        arr = np.nan_to_num(self.arr, nan=self.nodata)
+        if self.count == 1:
             out_dst.write(arr.astype(dt)[np.newaxis])
         else:
             out_dst.write(arr.astype(dt))
 
         out_dst.close()
 
-    def crop(self, other):
+    def crop(self, other: Union[Raster, List[float], rio.coords.BoundsingBox]):
         raise NotImplementedError('This function has not been implemented yet!')
 
     def reproject(self, other: Raster, method: str = 'bilinear', crs=None):
@@ -140,23 +154,18 @@ class Raster(object):
             self.arr,
             dst,
             src_transform=self.transform,
-            src_crs=self.profile['crs'] if self.profile['crs'] is not None else crs,
+            src_crs=self.crs if self.crs is not None else crs,
             dst_transform=other.transform,
-            dst_crs=other.profile['crs'],
+            dst_crs=other.crs,
             dst_nodata=np.nan,
             resampling=methods[method])
 
-        profile = self.profile.copy()
-        profile['width'] = other.profile['width']
-        profile['height'] = other.profile['height']
-        profile['transform'] = transform
-        profile['crs'] = other.profile['crs']
-        profile['bounds'] = other.bounds
-        profile['profile'] = other.profile
-
-
-        return Raster(rst=arr, **profile)
-
+        return Raster(
+            rst=arr, transform=transform, nodata=self.nodata, crs=other.crs,
+            bounds=other.bounds, dtype=self.dtype, name=self.name, driver=self.driver
+        )
+    
+    #TODO: Finish changing reliance on proile. 
     def __add__(self, other: Union[Raster, int, float]):
         if isinstance(other, Raster):
             assert self.arr.shape == other.arr.shape, f'Error! Rasters have different shapes. Raster 1 has shape ' \
@@ -231,7 +240,7 @@ class RasterStack(object):
         :param fun: A numpy function to apply to the stack of rasters (e.g. np.mean)
         :param axis: The axis to apply the function across. In most cases should be zero.
         """
-        arr = np.array([x.arr for x in self.rasters])
+        arr = self.arr or np.array([x.arr for x in self.rasters])
         tmp = fun(arr, axis=axis)
         return Raster(tmp, name=name, **self.profile)
     
