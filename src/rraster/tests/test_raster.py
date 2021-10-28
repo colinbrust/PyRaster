@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 import pkg_resources
-from rraster.Raster import Raster, RasterStack
-from rraster.Rasterize import rasterize
+from ..Raster import Raster, RasterStack
+from ..Rasterize import rasterize
 
 
 # Find path to data within the package
@@ -36,7 +36,7 @@ class TestRaster:
 
         assert r2.arr.shape == tmp.arr.shape, 'Shapes are not the same.'
         assert r2.transform == tmp.transform, 'Transforms are not the same.'
-        assert r2.profile['crs'] == tmp.profile['crs'], 'CRS are not the same.'
+        assert r2.crs == tmp.crs, 'CRS are not the same.'
 
     def test_write(self, tmp_path):
         fname = tmp_path / 'test.tif'

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import tempfile
 from pathlib import Path
 from typing import List, Union
@@ -164,7 +165,10 @@ class Raster(object):
             rst=arr, transform=transform, nodata=self.nodata, crs=other.crs,
             bounds=other.bounds, dtype=self.dtype, name=self.name, driver=self.driver
         )
-    
+
+    def copy(self):
+        return copy.deepcopy(self)
+
     #TODO: Finish changing reliance on proile. 
     def __add__(self, other: Union[Raster, int, float]):
         if isinstance(other, Raster):
@@ -173,7 +177,10 @@ class Raster(object):
             tmp = self.arr + other.arr
         else:
             tmp = self.arr + other
-        return Raster(tmp, **self.profile)
+        
+        cp = self.copy()
+        cp.arr = tmp
+        return cp
 
     def __mul__(self, other: Union[Raster, int, float]):
         if isinstance(other, Raster):
@@ -182,7 +189,10 @@ class Raster(object):
             tmp = self.arr * other.arr
         else:
             tmp = self.arr * other
-        return Raster(tmp, **self.profile)
+
+        cp = self.copy()
+        cp.arr = tmp
+        return cp
 
     def __sub__(self, other: Union[Raster, int, float]):
         if isinstance(other, Raster):
@@ -191,7 +201,10 @@ class Raster(object):
             tmp = self.arr - other.arr
         else:
             tmp = self.arr - other
-        return Raster(tmp, **self.profile)
+        
+        cp = self.copy()
+        cp.arr = tmp
+        return cp
 
     def __truediv__(self, other: Union[Raster, int, float]):
         if isinstance(other, Raster):
@@ -200,11 +213,14 @@ class Raster(object):
             tmp = self.arr / other.arr
         else:
             tmp = self.arr / other
-        return Raster(tmp, **self.profile)
+
+        cp = self.copy()
+        cp.arr = tmp
+        return cp
 
     def __repr__(self):
-        return f"raster of size {self.profile['height']} x {self.profile['width']}\ncrs: {self.profile['crs']}\n" \
-               f"number of bands: {self.profile['count']} "
+        return f"raster of size {self.height} x {self.width}\ncrs: {self.crs}\n" \
+               f"number of bands: {self.count} "
 
 
 class RasterStack(object):
@@ -223,11 +239,16 @@ class RasterStack(object):
         if not isinstance(args[0], Raster):
             args = [Raster(x) for x in args]
 
-        self.rasters = args
-        self.nodata = self.rasters[0].nodata
-        self.transform = self.rasters[0].transform
-        self.profile = self.rasters[0].profile
+        self.rasters = args        
+
+        self.crs = self.rasters[0].transform or None
+        self.driver = self.rasters[0].driver or 'GTiff' 
+        self.dtype = self.rasters[0].dtype or 'float32' 
+        self.height = self.rasters[0].height
         self.names = [x.name for x in self.rasters]
+        self.nodata = self.rasters[0].nodata or -9999 
+        self.transform = self.rasters[0].transform or None
+        self.width = self.rasters[0].width
         
         # In the case of a stack with hundreds or thousands of images, this could take a while.
         if build_arr:
@@ -240,9 +261,12 @@ class RasterStack(object):
         :param fun: A numpy function to apply to the stack of rasters (e.g. np.mean)
         :param axis: The axis to apply the function across. In most cases should be zero.
         """
-        arr = self.arr or np.array([x.arr for x in self.rasters])
+        arr = self.arr if self.arr is not None else np.array([x.arr for x in self.rasters])
         tmp = fun(arr, axis=axis)
-        return Raster(tmp, name=name, **self.profile)
+        return Raster(
+            tmp, name=name, crs=self.crs, driver=self.driver, dtype=self.dtype,
+            nodata=self.nodata, transform=self.transform
+        )
     
     def __len__(self):
         return len(self.rasters)
