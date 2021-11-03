@@ -36,10 +36,10 @@ class Raster(object):
 
             with rio.open(rst) as tmp:
                 self.arr = tmp.read(band)
-                self.arr = self.arr * tmp.scales if tmp.scales else self.arr
-                self.arr = self.arr.astype(np.float32)
                 self.nodata = tmp.nodata
                 self.arr[self.arr == tmp.nodata] = np.nan
+                self.arr = self.arr * tmp.scales if tmp.scales else self.arr
+                self.arr = self.arr.astype(np.float32)
                 self.bounds = tmp.bounds
                 self.count = tmp.count
                 self.crs = tmp.crs

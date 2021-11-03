@@ -9,7 +9,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='RRaster', 
-    version='0.0.1',
+    version='0.0.2',
     description='Rasterio function wrappers for simple raster processing in Python that mimics the R Raster syntax.',
     long_description=long_description,
     long_description_content_type='text/markdown',
