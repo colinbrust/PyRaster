@@ -242,7 +242,7 @@ class RasterStack(object):
 
         self.rasters = args        
 
-        self.crs = self.rasters[0].transform or None
+        self.crs = self.rasters[0].crs or None
         self.driver = self.rasters[0].driver or 'GTiff' 
         self.dtype = self.rasters[0].dtype or 'float32' 
         self.height = self.rasters[0].height
